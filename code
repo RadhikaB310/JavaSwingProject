@@ -1,0 +1,162 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.time.*;
+import java.util.*;
+
+public class HabitCalendarApp {
+
+    private JFrame frame;
+    private JPanel calendarPanel, habitPanel, mainPanel;
+    private JLabel progressLabel, titleLabel;
+    private final Map<String, HabitData> habitMap = new HashMap<>();
+
+    private int currentYear = 2025;
+    private int currentMonth = 4; // May = 4 (0-based for Month enum)
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new HabitCalendarApp().createUI());
+    }
+
+    private void createUI() {
+        frame = new JFrame("Habit Tracker");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(700, 600);
+        frame.setLayout(new BorderLayout());
+
+        JPanel topPanel = new JPanel(new BorderLayout());
+        JButton prevButton = new JButton("<");
+        JButton nextButton = new JButton(">");
+        titleLabel = new JLabel("", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
+
+        prevButton.addActionListener(e -> changeMonth(-1));
+        nextButton.addActionListener(e -> changeMonth(1));
+
+        topPanel.add(prevButton, BorderLayout.WEST);
+        topPanel.add(titleLabel, BorderLayout.CENTER);
+        topPanel.add(nextButton, BorderLayout.EAST);
+
+        calendarPanel = new JPanel();
+        habitPanel = new JPanel();
+        progressLabel = new JLabel("Progress: ", SwingConstants.CENTER);
+
+        mainPanel = new JPanel(new BorderLayout());
+        mainPanel.add(topPanel, BorderLayout.NORTH);
+        mainPanel.add(calendarPanel, BorderLayout.CENTER);
+        mainPanel.add(habitPanel, BorderLayout.SOUTH);
+
+        frame.add(mainPanel, BorderLayout.CENTER);
+        frame.add(progressLabel, BorderLayout.SOUTH);
+
+        updateCalendarPanel();
+        frame.setVisible(true);
+    }
+
+    private void updateCalendarPanel() {
+        calendarPanel.removeAll();
+        calendarPanel.setLayout(new GridLayout(0, 7));
+        titleLabel.setText(YearMonth.of(currentYear, currentMonth + 1).getMonth().toString() + " " + currentYear);
+
+        YearMonth yearMonth = YearMonth.of(currentYear, currentMonth + 1);
+        int daysInMonth = yearMonth.lengthOfMonth();
+        LocalDate firstDay = yearMonth.atDay(1);
+        int startDay = firstDay.getDayOfWeek().getValue(); // 1=Mon...7=Sun
+
+        // Add empty labels for offset
+        for (int i = 1; i < startDay; i++) {
+            calendarPanel.add(new JLabel(""));
+        }
+
+        for (int i = 1; i <= daysInMonth; i++) {
+            JButton dayButton = new JButton(String.valueOf(i));
+            String date = String.format("%04d-%02d-%02d", currentYear, currentMonth + 1, i);
+            dayButton.addActionListener(e -> showHabitPanelForDate(date));
+            calendarPanel.add(dayButton);
+        }
+
+        calendarPanel.revalidate();
+        calendarPanel.repaint();
+    }
+
+    private void changeMonth(int delta) {
+        currentMonth += delta;
+        if (currentMonth < 0) {
+            currentMonth = 11;
+            currentYear--;
+        } else if (currentMonth > 11) {
+            currentMonth = 0;
+            currentYear++;
+        }
+        updateCalendarPanel();
+        habitPanel.removeAll();
+        progressLabel.setText("Progress: ");
+        frame.revalidate();
+        frame.repaint();
+    }
+
+    private void showHabitPanelForDate(String date) {
+        habitPanel.removeAll();
+        habitPanel.setLayout(new BoxLayout(habitPanel, BoxLayout.Y_AXIS));
+        habitPanel.setBorder(BorderFactory.createTitledBorder("Habits for " + date));
+
+        HabitData data = habitMap.getOrDefault(date, new HabitData());
+
+        JTextField[] fields = new JTextField[3];
+        JCheckBox[] checks = new JCheckBox[3];
+
+        for (int i = 0; i < 3; i++) {
+            habitPanel.add(new JLabel("Enter habit " + date + ":"));
+            fields[i] = new JTextField(data.habits[i], 20);
+            habitPanel.add(fields[i]);
+
+            checks[i] = new JCheckBox("Completed");
+            checks[i].setSelected(data.completed[i]);
+            habitPanel.add(checks[i]);
+
+            habitPanel.add(Box.createVerticalStrut(5));
+        }
+
+        JPanel buttonPanel = new JPanel();
+        JButton okButton = new JButton("OK");
+        JButton cancelButton = new JButton("Cancel");
+        buttonPanel.add(okButton);
+        buttonPanel.add(cancelButton);
+        habitPanel.add(buttonPanel);
+
+        okButton.addActionListener(e -> {
+            for (int i = 0; i < 3; i++) {
+                data.habits[i] = fields[i].getText();
+                data.completed[i] = checks[i].isSelected();
+            }
+            habitMap.put(date, data);
+            updateProgress(date);
+        });
+
+        cancelButton.addActionListener(e -> {
+            habitPanel.removeAll();
+            progressLabel.setText("Progress: ");
+            frame.revalidate();
+            frame.repaint();
+        });
+
+        updateProgress(date);
+        frame.revalidate();
+        frame.repaint();
+    }
+
+    private void updateProgress(String date) {
+        HabitData data = habitMap.getOrDefault(date, new HabitData());
+        int completedCount = 0;
+        for (boolean done : data.completed) {
+            if (done) completedCount++;
+        }
+        int percent = (completedCount * 100) / 3;
+        progressLabel.setText("Progress on " + date + ": " + percent + "% completed");
+    }
+
+    static class HabitData {
+        String[] habits = new String[]{"", "", ""};
+        boolean[] completed = new boolean[]{false, false, false};
+    }
+}
