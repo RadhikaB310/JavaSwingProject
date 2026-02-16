@@ -1,1 +1,36 @@
-This Java Swing Habit Tracker application provides a simple interface for tracking up to three daily habits using a calendar view.<br> Users can navigate through different months, click on a specific date, enter up to three habits, and mark them as completed.<br> The app displays the progress for each selected day as a percentage based on completed habits.<br> All data is stored in memory during the session, without persistent storage. It’s easy to run with any Java Development Kit (JDK 8 or higher) and is ideal for users seeking a lightweight, goal-oriented daily habit tracking tool.
+# Java Swing Habit Tracker
+
+This is a desktop habit tracker built with Java Swing.
+
+## What was fixed for desktop usage
+- Added persistent storage, so your data is saved to a local file and restored when you reopen the app.
+- Added explicit **Save Data** and **Load Data** buttons.
+- Added auto-save on checkbox changes and when closing the window.
+- Kept the monthly tracker design with date rows and habit checkbox columns.
+
+## Features
+- Track any number of habits for each day of a selected month.
+- Navigate month-to-month.
+- End-of-month analysis:
+  - Overall completion percentage
+  - Perfect day count
+  - Best full-completion streak
+  - Per-habit completion percentages
+
+## Run as desktop app
+```bash
+javac HabitCalendarApp.java
+java HabitCalendarApp
+```
+
+## Optional: build a runnable JAR
+```bash
+javac HabitCalendarApp.java
+jar cfe HabitTracker.jar HabitCalendarApp *.class
+java -jar HabitTracker.jar
+```
+
+## Data file location
+The app stores data in:
+- `~/.habit-tracker-data.ser` (Linux/macOS)
+- `%USERPROFILE%\\.habit-tracker-data.ser` (Windows)
